@@ -12,9 +12,12 @@ const app = express();
 
 // Middleware
 app.use(cors({
-  origin: "https://votetracker-pro.vercel.app",
-  credentials: true, // if you send cookies
-}));        // CORS allow for frontend
+  origin: [
+    "http://localhost:5173", // optional: local frontend dev
+    "https://votetracker-pro.vercel.app" // live frontend
+  ],
+  credentials: true,
+}));
 app.use(express.json());  // JSON body parsing
 
 // Routes
