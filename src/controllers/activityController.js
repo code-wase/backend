@@ -1,22 +1,29 @@
-import {
-  createActivityService,
-  getActivityService,
-} from "../services/activityServices.js";
+import Activity from "../models/activityModel.js";
 
+// Create new activity
 export const createActivity = async (req, res) => {
   try {
-    const activity = await createActivityService(req.user.id, req.body);
+    const activity = await Activity.create({
+      userId: req.user._id,
+      action: req.body.action,
+      details: req.body.details || "",
+    });
+
     res.status(201).json({ success: true, activity });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
 };
 
-export const getActivities = async (req, res) => {
+// Get only logged-in user’s activities
+export const getUserActivities = async (req, res) => {
   try {
-    const activities = await getActivityService(req.user.id);
-    res.status(200).json({ success: true, activities });
+    const activities = await Activity.find({ userId: req.user._id }).sort({
+      createdAt: -1,
+    });
+
+    res.json({ success: true, activities });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };

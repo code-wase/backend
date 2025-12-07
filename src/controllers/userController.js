@@ -22,57 +22,51 @@ export const register = async (req, res) => {
 };
 
 // Login user
-export const login = async (req, res) => {
+// loginUser controller
+export const loginUser = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    if (!email || !password) {
-      return res.status(400).json({
-        success: false,
-        message: "Email and password are required",
-      });
-    }
+    const user = await User.findOne({ email });
+    if (!user) return res.status(400).json({ success: false, message: "User not found" });
 
-    // Normalize email
-    const normalizedEmail = email.trim().toLowerCase();
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) return res.status(400).json({ success: false, message: "Wrong password" });
 
-    const { user, token } = await loginUser({ email: normalizedEmail, password });
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
 
-    if (!user.isActive) {
-      return res.status(403).json({
-        success: false,
-        message: "User account is inactive",
-      });
-    }
+    // Save Activity
+    await Activity.create({
+      userId: user._id,
+      type: "LOGIN",
+      message: "User logged in"
+    });
 
-    res.status(200).json({
+    res.json({
       success: true,
       message: "Login successful",
-      user,
       token,
+      user,
     });
+
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(err.status || 500).json({
-      success: false,
-      message: err.message || "Login failed",
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
+
 
 // Logout user
-export const logout = async (req, res) => {
+export const logoutUser = async (req, res) => {
   try {
-    await logoutUser(req.user._id);
+    await Activity.create({
+      userId: req.user._id,
+      type: "LOGOUT",
+      message: "User logged out"
+    });
 
-    res.status(200).json({
-      success: true,
-      message: "Logout successful",
-    });
+    res.json({ success: true, message: "Logout successful" });
   } catch (err) {
-    res.status(err.status || 500).json({
-      success: false,
-      message: err.message,
-    });
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
+

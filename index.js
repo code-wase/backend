@@ -11,28 +11,28 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors());
-app.use(express.json());
+app.use(cors());          // CORS allow for frontend
+app.use(express.json());  // JSON body parsing
 
-
-app.use('/user',userRoutes)
+// Routes
+app.use("/user", userRoutes);
 app.use("/activity", activityRoutes);
 
 // Test route
 app.get("/", (req, res) => {
-  res.send("Backend server is running...");
+  res.send("✅ Backend server is running...");
 });
 
-// Start server only after MongoDB connection
+// Start server after DB connection
 const startServer = async () => {
   try {
-    await connectDB(); // Wait for DB to connect
+    await connectDB(); // Wait for MongoDB connection
     const PORT = process.env.PORT || 5000;
     app.listen(PORT, () => {
-      console.log(`Server is running on http://localhost:${PORT}`);
+      console.log(`🚀 Server is running on http://localhost:${PORT}`);
     });
   } catch (error) {
-    console.error("Server failed to start:", error.message);
+    console.error("❌ Server failed to start:", error.message);
     process.exit(1);
   }
 };
