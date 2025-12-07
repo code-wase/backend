@@ -1,10 +1,13 @@
-import { registerUser, loginUser, logoutUser } from "../services/userServices.js";
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import User from "../models/userModel.js";
+import Activity from "../models/activityModel.js";
+import { registerUser } from "../services/userServices.js";
 
-// Register user (anyone can register now, admin check removed)
+// 🔹 Register User
 export const register = async (req, res) => {
   try {
     const { firstName, lastName, email, phone, password, role } = req.body;
-
     const { user, token } = await registerUser({ firstName, lastName, email, phone, password, role });
 
     res.status(201).json({
@@ -16,30 +19,32 @@ export const register = async (req, res) => {
   } catch (err) {
     res.status(err.status || 500).json({
       success: false,
-      message: err.message,
+      message: err.message || "Server error",
     });
   }
 };
 
-// Login user
-// loginUser controller
-export const loginUser = async (req, res) => {
+// 🔹 Login User
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Check if user exists
     const user = await User.findOne({ email });
     if (!user) return res.status(400).json({ success: false, message: "User not found" });
 
+    // Check password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ success: false, message: "Wrong password" });
 
-    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET);
+    // Generate JWT Token
+    const token = jwt.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: "1d" });
 
-    // Save Activity
+    // Save Login Activity
     await Activity.create({
       userId: user._id,
-      type: "LOGIN",
-      message: "User logged in"
+      action: "LOGIN",
+      details: "User logged in",
     });
 
     res.json({
@@ -50,23 +55,21 @@ export const loginUser = async (req, res) => {
     });
 
   } catch (err) {
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 };
 
-
-// Logout user
-export const logoutUser = async (req, res) => {
+// 🔹 Logout User
+export const logout = async (req, res) => {
   try {
     await Activity.create({
       userId: req.user._id,
-      type: "LOGOUT",
-      message: "User logged out"
+      action: "LOGOUT",
+      details: "User logged out",
     });
 
     res.json({ success: true, message: "Logout successful" });
   } catch (err) {
-    res.status(500).json({ success: false, message: "Server error" });
+    res.status(500).json({ success: false, message: err.message || "Server error" });
   }
 };
-
