@@ -11,13 +11,7 @@ dotenv.config();
 const app = express();
 
 // Middleware
-app.use(cors({
-  origin: [
-    "http://localhost:5173", // optional: local frontend dev
-    "https://votetracker-pro.vercel.app" // live frontend
-  ],
-  credentials: true,
-}));
+app.use(cors());          // CORS allow for frontend
 app.use(express.json());  // JSON body parsing
 
 // Routes

@@ -46,16 +46,7 @@ export const loginUser = async ({ email, password }) => {
   const user = await User.findOne({ email: normalizedEmail }).select("+password");
   if (!user) throw { status: 401, message: "Invalid credentials" };
 
-  let isMatch = false;
-
-  // Check if password is hashed (bcrypt hash starts with $2b$)
-  if (user.password.startsWith("$2b$") || user.password.startsWith("$2a$")) {
-    isMatch = await bcrypt.compare(password, user.password);
-  } else {
-    // Plaintext password (existing users)
-    isMatch = password === user.password;
-  }
-
+  const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) throw { status: 401, message: "Invalid credentials" };
 
   const token = jwt.sign({ id: user._id, role: user.role }, process.env.JWT_SECRET, {
@@ -68,7 +59,6 @@ export const loginUser = async ({ email, password }) => {
   const { password: _ignoredPwd, token: _ignoredToken, ...safeUser } = user.toObject();
   return { user: safeUser, token };
 };
-
 
 export const logoutUser = async (id) => {
   const user = await User.findById(id);
